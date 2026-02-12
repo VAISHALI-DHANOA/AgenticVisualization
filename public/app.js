@@ -3,8 +3,30 @@ const elements = {
   userInput: document.getElementById("userInput"),
   sendBtn: document.getElementById("sendBtn"),
   vizMode: document.getElementById("vizMode"),
+  dashboardPanel: document.getElementById("dashboardPanel"),
+  dashboardGrid: document.getElementById("dashboardGrid"),
+  dashboardLoading: document.getElementById("dashboardLoading"),
+  chatPanel: document.getElementById("chat"),
 };
 
+// --- Tab switching ---
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+
+    const target = tab.dataset.tab;
+    if (target === "dashboard") {
+      elements.dashboardPanel.classList.remove("hidden");
+      elements.chatPanel.classList.add("hidden");
+    } else {
+      elements.chatPanel.classList.remove("hidden");
+      elements.dashboardPanel.classList.add("hidden");
+    }
+  });
+});
+
+// --- Chart rendering (shared by chat and dashboard) ---
 const renderChart = (canvas, spec) => {
   const config = {
     type: spec.type,
@@ -49,6 +71,62 @@ const renderChart = (canvas, spec) => {
   new Chart(canvas, config);
 };
 
+// --- Dashboard ---
+let dashboardLoaded = false;
+
+const loadDashboard = async () => {
+  if (dashboardLoaded) return;
+
+  try {
+    const res = await fetch("/api/dashboard");
+    const data = await res.json();
+
+    if (!data.ready) {
+      setTimeout(loadDashboard, 2000);
+      return;
+    }
+
+    elements.dashboardLoading.classList.add("hidden");
+
+    if (data.charts.length === 0) {
+      elements.dashboardGrid.innerHTML = "<p style='color:var(--muted);padding:20px;'>No charts were generated. Try restarting the server.</p>";
+      return;
+    }
+
+    for (const chart of data.charts) {
+      const card = document.createElement("div");
+      card.className = "dashboard-card";
+
+      const title = document.createElement("h3");
+      title.textContent = chart.title || "Chart";
+      card.appendChild(title);
+
+      if (chart.description) {
+        const desc = document.createElement("p");
+        desc.textContent = chart.description;
+        card.appendChild(desc);
+      }
+
+      const canvas = document.createElement("canvas");
+      card.appendChild(canvas);
+      elements.dashboardGrid.appendChild(card);
+
+      requestAnimationFrame(() => {
+        renderChart(canvas, chart);
+      });
+    }
+
+    dashboardLoaded = true;
+  } catch (err) {
+    console.error("Dashboard fetch error:", err);
+    setTimeout(loadDashboard, 3000);
+  }
+};
+
+// Start loading dashboard immediately
+loadDashboard();
+
+// --- Chat messages ---
 const addMessage = (role, text, chartSpec = null) => {
   const msg = document.createElement("div");
   msg.className = `message ${role}`;

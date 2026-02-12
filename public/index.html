@@ -22,7 +22,20 @@
         </label>
       </header>
 
-      <section class="chat" id="chat">
+      <nav class="tabs">
+        <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="chat">Chat</button>
+      </nav>
+
+      <section class="panel" id="dashboardPanel">
+        <div class="dashboard-loading" id="dashboardLoading">
+          <div class="spinner"></div>
+          <p>Claude is analyzing the dataset and generating insights...</p>
+        </div>
+        <div class="dashboard-grid" id="dashboardGrid"></div>
+      </section>
+
+      <section class="chat panel hidden" id="chat">
         <div class="messages" id="messages"></div>
         <div class="composer">
           <input

@@ -73,6 +73,108 @@ loadCsv();
 // --- Anthropic client ---
 const anthropic = new Anthropic();
 
+// --- Shared helper: evaluate a JS expression against csvRows ---
+const evalExpr = (expr) => {
+  const fn = new Function("rows", `"use strict"; return (${expr});`);
+  return fn(csvRows);
+};
+
+// --- Dashboard generation at startup ---
+let dashboardCharts = [];
+let dashboardReady = false;
+
+async function generateDashboard() {
+  console.log("Generating dashboard...");
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 8192,
+      system: `You are a data visualization expert. You will be given a dataset summary. Your job is to return exactly 6 chart specifications as a JSON array that reveal the most interesting patterns in the data.
+
+Each chart spec must follow this exact format:
+{
+  "title": "Chart Title",
+  "description": "One sentence explaining the key insight this chart reveals.",
+  "type": "bar|line|pie|doughnut|scatter|radar",
+  "data": {
+    "labels": "<js expression returning string array, using rows>",
+    "datasets": [
+      {
+        "label": "Series Name",
+        "data": "<js expression returning number array, using rows>",
+        "backgroundColor": ["#3b6ef0","#f06e3b","#3bf06e","#f0c93b","#b03bf0","#3bf0e0","#f03b6e","#6ef03b","#f0a03b","#3b9ef0","#e03bf0","#3bf09e"]
+      }
+    ]
+  },
+  "options": {
+    "xLabel": "X Axis Label",
+    "yLabel": "Y Axis Label"
+  }
+}
+
+The "labels" and "data" fields are JavaScript expressions that will be evaluated with \`rows\` (an array of row objects from the CSV). Use only basic JS: map, filter, reduce, sort, Set, Math, Object, Number.
+
+Pick 6 charts that cover:
+1. Distribution of a key categorical variable (pie or doughnut)
+2. Comparison of a numeric metric across categories (bar)
+3. Relationship between two numeric variables (scatter — use {x, y} objects in data, no labels needed)
+4. Distribution/histogram of a numeric variable (bar with binned ranges)
+5. A surprising or noteworthy pattern you notice
+6. One more of your choice
+
+Return ONLY a JSON array of 6 objects — no markdown fences, no explanation, just the raw JSON array.`,
+      messages: [{ role: "user", content: `Here is the dataset:\n\n${csvSummary}` }],
+    });
+
+    const rawText = message.content
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("\n")
+      .trim();
+
+    // Strip markdown fences if Claude adds them anyway
+    let jsonText = rawText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?\s*```$/, "").trim();
+    // Sanitize smart quotes
+    jsonText = jsonText.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"');
+    jsonText = jsonText.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
+
+    const charts = JSON.parse(jsonText);
+
+    for (const chart of charts) {
+      try {
+        if (typeof chart.data.labels === "string") {
+          chart.data.labels = evalExpr(chart.data.labels);
+        }
+        for (const ds of chart.data.datasets) {
+          if (typeof ds.data === "string") {
+            ds.data = evalExpr(ds.data);
+          }
+          if (typeof ds.backgroundColor === "string" && ds.backgroundColor.includes("rows")) {
+            ds.backgroundColor = evalExpr(ds.backgroundColor);
+          }
+        }
+        dashboardCharts.push(chart);
+      } catch (chartErr) {
+        console.error(`Dashboard chart "${chart.title}" eval error:`, chartErr.message);
+      }
+    }
+
+    dashboardReady = true;
+    console.log(`Dashboard ready (${dashboardCharts.length} charts)`);
+  } catch (err) {
+    console.error("Dashboard generation error:", err.message);
+    dashboardReady = true; // Mark ready even on failure so UI stops loading
+  }
+}
+
+// Start dashboard generation in background
+generateDashboard();
+
+// --- Dashboard endpoint ---
+app.get("/api/dashboard", (req, res) => {
+  res.json({ charts: dashboardCharts, ready: dashboardReady });
+});
+
 // --- Chat endpoint ---
 app.post("/api/chat", async (req, res) => {
   const { question, vizMode } = req.body;
@@ -200,12 +302,6 @@ ${vizPrompt}
         if (!parsed.chart) continue;
 
         const chartSpec = parsed.chart;
-
-        // Helper to safely evaluate a JS expression against the dataset
-        const evalExpr = (expr) => {
-          const fn = new Function("rows", `"use strict"; return (${expr});`);
-          return fn(csvRows);
-        };
 
         // Evaluate JS expressions in labels
         if (typeof chartSpec.data.labels === "string") {
