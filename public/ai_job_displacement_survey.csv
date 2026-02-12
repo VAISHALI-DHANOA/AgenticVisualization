@@ -1,0 +1,101 @@
+respondent_id,age,gender,education_level,current_occupation,occupation_category,years_experience,industry,ai_exposure_score,perceived_threat_level,actual_automation_risk,already_using_ai,hours_saved_weekly,job_satisfaction,income_bracket,geographic_region,company_size,has_technical_skills,willing_to_retrain,confidence_in_adaptability,primary_concern
+1,28,Female,Bachelors,Software Developer,Technology,5,Technology,85,7,65,Yes,8,6,75000-100000,West,Large,Yes,Yes,7,Job replacement
+2,45,Male,Masters,Accountant,Finance,20,Finance,72,8,78,Yes,4,5,50000-75000,Midwest,Medium,No,Maybe,4,Skills obsolescence
+3,32,Female,Bachelors,Marketing Manager,Business,8,Marketing,68,6,55,Yes,6,7,75000-100000,East,Large,No,Yes,6,Career stagnation
+4,51,Male,High School,Truck Driver,Transportation,25,Logistics,15,3,45,No,0,8,50000-75000,South,Large,No,No,5,Physical health
+5,29,Non-binary,Masters,Data Analyst,Technology,4,Technology,88,7,70,Yes,10,7,75000-100000,West,Large,Yes,Yes,8,Job replacement
+6,38,Female,Bachelors,Customer Service Rep,Service,12,Retail,65,9,82,Yes,2,4,30000-50000,South,Medium,No,Maybe,3,Job replacement
+7,55,Male,Associates,Manufacturing Technician,Manufacturing,30,Manufacturing,42,5,68,No,0,6,50000-75000,Midwest,Large,No,No,3,Retirement timing
+8,26,Female,Bachelors,Content Writer,Creative,3,Media,70,8,60,Yes,5,6,50000-75000,East,Small,No,Yes,7,Income reduction
+9,42,Male,Masters,Financial Analyst,Finance,18,Finance,75,7,72,Yes,7,6,100000-150000,East,Large,Yes,Maybe,6,Job replacement
+10,31,Female,PhD,Research Scientist,Research,6,Healthcare,45,4,35,Yes,3,9,100000-150000,West,Large,Yes,Yes,9,Funding changes
+11,48,Male,Bachelors,Sales Manager,Sales,22,Technology,58,5,48,Yes,4,7,75000-100000,South,Medium,No,No,5,Commission structure
+12,27,Female,Masters,UX Designer,Design,4,Technology,62,6,52,Yes,6,8,75000-100000,West,Medium,Yes,Yes,8,Creative devaluation
+13,53,Female,High School,Administrative Assistant,Administrative,28,Healthcare,78,9,85,No,0,5,30000-50000,Midwest,Large,No,No,2,Job replacement
+14,35,Male,Bachelors,Teacher,Education,10,Education,38,4,30,Yes,2,8,50000-75000,South,Large,No,Maybe,6,Workload increase
+15,29,Female,Masters,HR Specialist,HR,5,Technology,68,7,65,Yes,5,6,75000-100000,East,Large,No,Yes,7,Depersonalization
+16,44,Male,Associates,Electrician,Skilled Trades,20,Construction,12,2,18,No,0,9,75000-100000,Midwest,Small,No,No,8,Regulation changes
+17,33,Female,Bachelors,Journalist,Media,9,Media,75,8,68,Yes,4,5,50000-75000,East,Medium,No,Yes,5,Job quality decline
+18,26,Male,Bachelors,Junior Developer,Technology,2,Technology,82,9,72,Yes,6,5,50000-75000,West,Large,Yes,Yes,6,Entry barriers
+19,50,Female,Masters,Legal Assistant,Legal,24,Legal,80,8,80,Yes,3,6,50000-75000,East,Large,No,Maybe,4,Job replacement
+20,37,Male,Bachelors,Operations Manager,Operations,14,Manufacturing,55,5,55,Yes,5,7,75000-100000,South,Large,No,No,6,Efficiency pressure
+21,28,Female,Masters,Product Manager,Technology,5,Technology,65,6,50,Yes,7,8,100000-150000,West,Large,Yes,Yes,8,Role evolution
+22,46,Male,High School,Warehouse Worker,Logistics,22,Retail,48,6,70,No,0,6,30000-50000,Midwest,Large,No,No,4,Job replacement
+23,31,Female,Bachelors,Graphic Designer,Design,7,Marketing,58,7,55,Yes,8,7,50000-75000,West,Small,Yes,Yes,7,Client expectations
+24,52,Male,Masters,Engineering Manager,Engineering,26,Manufacturing,52,4,40,Yes,4,8,100000-150000,Midwest,Large,Yes,No,7,Team dynamics
+25,27,Female,Bachelors,Social Media Manager,Marketing,4,Marketing,72,7,58,Yes,9,7,50000-75000,East,Medium,No,Yes,8,Content authenticity
+26,41,Male,PhD,College Professor,Education,16,Education,42,3,25,Yes,2,9,75000-100000,East,Large,Yes,No,9,Academic freedom
+27,34,Female,Bachelors,Nurse,Healthcare,11,Healthcare,25,2,20,Yes,1,8,75000-100000,South,Large,Yes,Maybe,8,Patient care quality
+28,29,Male,Masters,Cybersecurity Analyst,Technology,5,Finance,48,3,32,Yes,3,9,100000-150000,East,Large,Yes,Yes,9,Skill demand increase
+29,47,Female,Associates,Retail Manager,Retail,23,Retail,62,6,65,Yes,3,6,50000-75000,South,Medium,No,No,5,Margin pressure
+30,25,Female,Bachelors,Entry-level Analyst,Finance,1,Finance,78,9,75,Yes,5,5,50000-75000,East,Large,Yes,Yes,5,Career start timing
+31,54,Male,High School,Maintenance Worker,Facilities,32,Manufacturing,20,3,35,No,0,7,50000-75000,Midwest,Large,No,No,6,Physical demands
+32,36,Female,Masters,Business Consultant,Consulting,12,Consulting,70,6,58,Yes,8,7,100000-150000,East,Medium,Yes,Yes,7,Client relationships
+33,30,Male,Bachelors,Video Editor,Creative,6,Media,65,7,62,Yes,10,6,50000-75000,West,Small,Yes,Yes,6,Creative control
+34,43,Female,Bachelors,Project Manager,Technology,17,Technology,58,5,48,Yes,6,8,100000-150000,West,Large,Yes,No,7,Methodology changes
+35,28,Female,Masters,Market Research Analyst,Research,4,Marketing,75,7,68,Yes,7,6,75000-100000,East,Medium,Yes,Yes,7,Data interpretation
+36,49,Male,Associates,HVAC Technician,Skilled Trades,26,Construction,15,2,22,No,0,9,75000-100000,South,Small,No,No,8,Supply chain issues
+37,32,Female,Bachelors,Event Planner,Service,8,Hospitality,45,5,40,Yes,4,7,50000-75000,West,Small,No,Yes,7,Industry recovery
+38,26,Male,Bachelors,Data Entry Clerk,Administrative,3,Finance,88,10,92,Yes,1,3,30000-50000,Midwest,Large,No,Yes,4,Job replacement
+39,51,Female,Masters,HR Director,HR,25,Healthcare,62,5,52,Yes,5,8,100000-150000,South,Large,No,No,8,Compliance complexity
+40,35,Male,Bachelors,Web Developer,Technology,11,Technology,78,6,60,Yes,9,8,100000-150000,West,Medium,Yes,Yes,8,Technology churn
+41,29,Female,Masters,Investment Analyst,Finance,5,Finance,72,7,65,Yes,6,7,100000-150000,East,Large,Yes,Yes,7,Model reliability
+42,44,Male,High School,Delivery Driver,Logistics,20,Logistics,35,4,55,No,0,7,30000-50000,West,Large,No,No,5,Autonomous vehicles
+43,33,Female,Bachelors,PR Specialist,Communications,9,Technology,65,6,55,Yes,5,7,75000-100000,East,Medium,No,Yes,7,Message control
+44,56,Male,Masters,Senior Engineer,Engineering,32,Aerospace,45,3,35,Yes,3,9,150000+,West,Large,Yes,No,9,Innovation pace
+45,27,Female,Bachelors,Copywriter,Creative,4,Advertising,75,8,70,Yes,8,5,50000-75000,East,Small,No,Yes,6,Creative ownership
+46,39,Male,Associates,Chef,Service,18,Hospitality,28,3,32,No,0,8,50000-75000,South,Medium,Yes,No,7,Recipe development
+47,31,Female,Masters,Clinical Psychologist,Healthcare,7,Healthcare,32,2,18,Yes,2,9,100000-150000,West,Medium,Yes,No,9,Therapeutic relationship
+48,45,Male,Bachelors,Insurance Agent,Sales,21,Insurance,68,7,72,Yes,4,6,75000-100000,Midwest,Medium,No,Maybe,5,Product complexity
+49,28,Female,Bachelors,Paralegal,Legal,5,Legal,82,8,78,Yes,4,5,50000-75000,East,Large,No,Yes,5,Document automation
+50,52,Male,High School,Factory Supervisor,Manufacturing,30,Manufacturing,52,5,62,No,0,7,75000-100000,Midwest,Large,No,No,6,Production quotas
+51,34,Female,Masters,Environmental Scientist,Research,10,Government,38,3,28,Yes,2,8,75000-100000,West,Large,Yes,Maybe,8,Funding stability
+52,26,Male,Bachelors,Social Worker,Social Services,3,Nonprofit,30,2,15,No,0,9,30000-50000,South,Medium,No,Maybe,8,Caseload management
+53,47,Female,Bachelors,Office Manager,Administrative,24,Real Estate,65,7,68,Yes,3,6,50000-75000,East,Small,No,No,5,Process changes
+54,30,Male,Masters,Economist,Research,6,Finance,58,5,48,Yes,5,8,100000-150000,East,Large,Yes,Yes,8,Model assumptions
+55,41,Female,Associates,Dental Hygienist,Healthcare,18,Healthcare,18,1,12,No,0,9,75000-100000,Midwest,Small,Yes,No,9,Patient interaction
+56,29,Female,Bachelors,Fashion Designer,Design,5,Fashion,52,6,48,Yes,6,7,50000-75000,East,Small,Yes,Yes,7,Trend prediction
+57,53,Male,High School,Security Guard,Security,28,Facilities,42,5,58,No,0,6,30000-50000,South,Large,No,No,4,Surveillance tech
+58,36,Female,Masters,Brand Manager,Marketing,12,Consumer Goods,68,6,55,Yes,7,8,100000-150000,East,Large,Yes,Yes,8,Consumer insights
+59,25,Male,Bachelors,Entry-level Consultant,Consulting,1,Consulting,75,8,65,Yes,6,6,75000-100000,East,Large,Yes,Yes,6,Learning curve
+60,48,Male,Masters,School Principal,Education,23,Education,40,3,28,Yes,3,8,100000-150000,Midwest,Large,No,No,8,Administrative burden
+61,32,Female,Bachelors,Interior Designer,Design,8,Architecture,48,5,42,Yes,5,8,75000-100000,West,Small,No,Yes,8,Visualization tools
+62,55,Male,Associates,Plumber,Skilled Trades,33,Construction,10,1,15,No,0,9,75000-100000,South,Small,No,No,9,Physical capability
+63,28,Female,Masters,Sustainability Analyst,Research,4,Consulting,55,5,45,Yes,5,8,75000-100000,West,Medium,Yes,Yes,8,Greenwashing concerns
+64,43,Male,Bachelors,IT Support Specialist,Technology,19,Healthcare,72,7,68,Yes,5,6,75000-100000,Midwest,Large,Yes,Maybe,6,Ticket automation
+65,31,Female,Bachelors,Recruiter,HR,7,Technology,70,7,70,Yes,8,6,75000-100000,West,Large,No,Yes,6,Screening automation
+66,49,Female,High School,Cashier,Retail,26,Retail,78,9,88,No,0,4,<30000,South,Large,No,No,2,Self-checkout
+67,35,Male,Masters,Chemical Engineer,Engineering,12,Pharmaceuticals,42,4,35,Yes,3,9,100000-150000,East,Large,Yes,Yes,9,Regulatory environment
+68,27,Female,Bachelors,Public Relations Manager,Communications,4,Technology,68,6,58,Yes,6,7,75000-100000,West,Medium,No,Yes,7,Crisis management
+69,51,Male,Associates,Construction Foreman,Construction,29,Construction,25,3,38,No,0,8,75000-100000,South,Medium,No,No,7,Labor shortage
+70,33,Female,Masters,Clinical Trial Manager,Healthcare,9,Pharmaceuticals,52,4,42,Yes,4,8,100000-150000,East,Large,Yes,Maybe,8,Regulatory complexity
+71,26,Male,Bachelors,Game Designer,Design,3,Gaming,62,6,52,Yes,7,8,75000-100000,West,Medium,Yes,Yes,8,Player expectations
+72,46,Female,Bachelors,Real Estate Agent,Sales,22,Real Estate,58,6,62,Yes,4,7,75000-100000,West,Small,No,No,6,Virtual tours
+73,30,Male,Masters,Biomedical Engineer,Engineering,6,Medical Devices,48,4,38,Yes,4,9,100000-150000,Midwest,Large,Yes,Yes,9,Innovation cycle
+74,52,Female,High School,Hotel Housekeeper,Service,30,Hospitality,35,4,48,No,0,6,<30000,South,Large,No,No,3,Robotic cleaning
+75,28,Female,Bachelors,Digital Marketing Specialist,Marketing,5,E-commerce,75,7,62,Yes,9,7,75000-100000,East,Medium,Yes,Yes,8,Algorithm changes
+76,41,Male,Masters,Architect,Design,17,Architecture,52,5,45,Yes,5,8,100000-150000,West,Medium,Yes,No,8,Design automation
+77,34,Female,Bachelors,Veterinarian,Healthcare,10,Healthcare,22,2,15,Yes,1,9,100000-150000,Midwest,Small,Yes,No,9,Diagnostic support
+78,57,Male,High School,Bus Driver,Transportation,35,Public Transit,32,4,52,No,0,7,50000-75000,East,Large,No,No,5,Autonomous vehicles
+79,29,Female,Masters,Supply Chain Analyst,Operations,5,Retail,68,6,58,Yes,7,7,75000-100000,Midwest,Large,Yes,Yes,7,Demand forecasting
+80,44,Male,Bachelors,Network Administrator,Technology,20,Finance,65,6,55,Yes,6,7,100000-150000,East,Large,Yes,Maybe,7,Cloud migration
+81,31,Female,Bachelors,Museum Curator,Arts,8,Nonprofit,35,3,25,Yes,2,9,50000-75000,East,Small,No,Maybe,8,Digital exhibitions
+82,48,Male,Associates,Welder,Manufacturing,26,Manufacturing,38,4,52,No,0,8,75000-100000,Midwest,Medium,Yes,No,7,Robotic welding
+83,27,Female,Masters,Urban Planner,Government,4,Government,45,4,38,Yes,3,8,75000-100000,West,Large,Yes,Yes,8,Simulation tools
+84,53,Female,Bachelors,Office Administrator,Administrative,28,Legal,72,8,75,Yes,2,5,50000-75000,East,Medium,No,No,4,Document management
+85,32,Male,Bachelors,Quality Assurance Engineer,Technology,8,Technology,70,6,58,Yes,8,7,100000-150000,West,Large,Yes,Yes,8,Test automation
+86,45,Female,High School,Janitorial Staff,Service,23,Education,25,3,42,No,0,7,<30000,Midwest,Large,No,No,4,Robotic cleaning
+87,29,Male,Masters,Quant Analyst,Finance,5,Finance,82,7,72,Yes,8,8,150000+,East,Large,Yes,Yes,8,Model black boxes
+88,36,Female,Bachelors,Librarian,Education,12,Education,65,7,68,Yes,3,7,50000-75000,South,Medium,No,Maybe,6,Cataloging automation
+89,50,Male,Masters,Physician,Healthcare,25,Healthcare,35,2,18,Yes,2,9,150000+,West,Large,Yes,No,9,Diagnostic tools
+90,28,Female,Bachelors,Podcast Producer,Media,4,Media,58,6,52,Yes,7,8,50000-75000,West,Small,Yes,Yes,8,Content generation
+91,42,Male,Associates,Landscape Designer,Design,19,Landscaping,32,3,35,Yes,3,8,50000-75000,South,Small,No,No,8,Planning software
+92,33,Female,Masters,Speech Therapist,Healthcare,9,Healthcare,28,2,15,Yes,1,9,75000-100000,East,Medium,Yes,No,9,Personalized care
+93,54,Male,High School,Machine Operator,Manufacturing,32,Manufacturing,58,6,72,No,0,6,50000-75000,Midwest,Large,No,No,4,Automation replacement
+94,26,Female,Bachelors,Brand Strategist,Marketing,3,Advertising,70,7,60,Yes,8,7,75000-100000,East,Medium,Yes,Yes,7,Strategy automation
+95,47,Male,Bachelors,Restaurant Manager,Service,24,Hospitality,48,5,52,Yes,4,7,75000-100000,South,Medium,No,No,6,Kitchen automation
+96,30,Female,Masters,Cognitive Scientist,Research,6,Technology,52,5,42,Yes,4,9,100000-150000,West,Large,Yes,Yes,9,AI applications
+97,52,Female,Associates,Medical Receptionist,Healthcare,28,Healthcare,75,8,78,Yes,2,5,30000-50000,Midwest,Medium,No,No,3,Scheduling automation
+98,35,Male,Bachelors,Telecommunications Specialist,Technology,13,Telecom,62,6,55,Yes,5,7,75000-100000,East,Large,Yes,Maybe,7,5G transition
+99,29,Female,Bachelors,Forensic Analyst,Government,5,Law Enforcement,45,4,38,Yes,3,8,75000-100000,East,Large,Yes,Yes,8,Analysis tools
+100,43,Male,Masters,Operations Research Analyst,Research,18,Logistics,72,6,62,Yes,7,8,100000-150000,Midwest,Large,Yes,Yes,8,Optimization algorithms

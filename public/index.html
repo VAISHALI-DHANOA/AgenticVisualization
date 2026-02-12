@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Job Displacement Survey — Data Chat</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div>
+          <h1>AI Job Displacement Survey</h1>
+          <p class="subtitle">Chat with the dataset (powered by Claude)</p>
+        </div>
+      </header>
+
+      <section class="chat" id="chat">
+        <div class="messages" id="messages"></div>
+        <div class="composer">
+          <input
+            id="userInput"
+            type="text"
+            placeholder="Ask anything about the dataset..." />
+          <button id="sendBtn">Send</button>
+        </div>
+        <div class="hints">
+          <span>Try:</span>
+          <button class="hint" data-q="count by gender">count by gender</button>
+          <button class="hint" data-q="average ai_exposure_score by industry">average ai_exposure_score by industry</button>
+          <button class="hint" data-q="top 5 occupations by perceived_threat_level">top 5 occupations by perceived_threat_level</button>
+          <button class="hint" data-q="What is the relationship between education level and confidence in adaptability?">relationship between education and adaptability</button>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
