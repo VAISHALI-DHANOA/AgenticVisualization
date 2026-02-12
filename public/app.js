@@ -2,12 +2,70 @@ const elements = {
   messages: document.getElementById("messages"),
   userInput: document.getElementById("userInput"),
   sendBtn: document.getElementById("sendBtn"),
+  vizMode: document.getElementById("vizMode"),
 };
 
-const addMessage = (role, text) => {
+const renderChart = (canvas, spec) => {
+  const config = {
+    type: spec.type,
+    data: {
+      labels: spec.data.labels,
+      datasets: spec.data.datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        title: {
+          display: !!spec.title,
+          text: spec.title || "",
+        },
+        legend: {
+          display: spec.data.datasets.length > 1 || spec.type === "pie" || spec.type === "doughnut",
+        },
+      },
+      scales: {},
+    },
+  };
+
+  if (spec.options && ["bar", "line", "scatter"].includes(spec.type)) {
+    if (spec.options.xLabel) {
+      config.options.scales.x = {
+        title: { display: true, text: spec.options.xLabel },
+        stacked: spec.options.stacked || false,
+      };
+    }
+    if (spec.options.yLabel) {
+      config.options.scales.y = {
+        title: { display: true, text: spec.options.yLabel },
+        stacked: spec.options.stacked || false,
+      };
+    }
+    if (spec.options.indexAxis) {
+      config.options.indexAxis = spec.options.indexAxis;
+    }
+  }
+
+  new Chart(canvas, config);
+};
+
+const addMessage = (role, text, chartSpec = null) => {
   const msg = document.createElement("div");
   msg.className = `message ${role}`;
   msg.textContent = text;
+
+  if (chartSpec) {
+    const container = document.createElement("div");
+    container.className = "chart-container";
+    const canvas = document.createElement("canvas");
+    container.appendChild(canvas);
+    msg.appendChild(container);
+
+    requestAnimationFrame(() => {
+      renderChart(canvas, chartSpec);
+    });
+  }
+
   elements.messages.appendChild(msg);
   elements.messages.scrollTop = elements.messages.scrollHeight;
 };
@@ -22,7 +80,7 @@ const sendQuestion = async (question) => {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, vizMode: elements.vizMode.checked }),
     });
 
     if (!res.ok) {
@@ -32,7 +90,7 @@ const sendQuestion = async (question) => {
     }
 
     const data = await res.json();
-    addMessage("bot", data.reply);
+    addMessage("bot", data.reply, data.chart || null);
   } catch (err) {
     addMessage("bot", "Network error — is the server running?");
   } finally {
