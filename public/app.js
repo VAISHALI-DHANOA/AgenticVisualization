@@ -33,13 +33,17 @@ document.querySelectorAll(".tab").forEach((tab) => {
 let allRows = [];
 let dashboardRecipes = [];
 let activeFilters = {};
+// Per-chart category selections: cardIndex -> Set of selected category labels
+let cardCategorySelections = {};
+const DEFAULT_MAX_CATEGORIES = 4;
 
+// Polished color palette
 const COLORS = [
-  "#3b6ef0", "#f06e3b", "#3bf06e", "#f0c93b", "#b03bf0",
-  "#3bf0e0", "#f03b6e", "#6ef03b", "#f0a03b", "#3b9ef0",
-  "#e03bf0", "#3bf09e", "#f0d93b", "#6e3bf0", "#3bf0b0",
-  "#f03ba0",
+  "#4C78A8", "#F58518", "#E45756", "#72B7B2",
+  "#54A24B", "#EECA3B", "#B279A2", "#FF9DA6",
+  "#9D755D", "#BAB0AC",
 ];
+const OTHER_COLOR = "#D0D5E0";
 
 function getFilteredRows() {
   return allRows.filter((row) => {
@@ -50,21 +54,28 @@ function getFilteredRows() {
   });
 }
 
-// --- Aggregation: compute chart data from recipe + rows ---
-function computeChartData(recipe, rows) {
+// --- Get all unique categories for a column, sorted by count descending ---
+function getAllCategories(column, rows) {
+  const counts = {};
+  for (const row of rows) {
+    const key = row[column] || "Unknown";
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label]) => label);
+}
+
+// --- Aggregation: compute chart data from recipe + rows, with category limiting ---
+function computeChartData(recipe, rows, selectedCategories) {
   const { type, xColumn, yColumn, aggregation } = recipe;
 
   if (type === "scatter") {
-    return {
-      x: rows.map((r) => Number(r[xColumn])),
-      y: rows.map((r) => Number(r[yColumn])),
-    };
+    return { x: rows.map((r) => Number(r[xColumn])), y: rows.map((r) => Number(r[yColumn])) };
   }
 
   if (type === "histogram") {
-    return {
-      values: rows.map((r) => Number(r[xColumn])),
-    };
+    return { values: rows.map((r) => Number(r[xColumn])) };
   }
 
   // bar or pie: group by xColumn
@@ -75,32 +86,56 @@ function computeChartData(recipe, rows) {
     groups[key].push(row);
   }
 
-  const labels = Object.keys(groups).sort();
-  let values;
+  // Determine which categories to show vs collapse into "Other"
+  const selected = selectedCategories || Object.keys(groups);
+  const shownLabels = [];
+  const shownValues = [];
+  let otherValue = 0;
+  let hasOther = false;
 
-  if (aggregation === "count") {
-    values = labels.map((k) => groups[k].length);
-  } else if (aggregation === "average") {
-    values = labels.map((k) => {
-      const nums = groups[k].map((r) => Number(r[yColumn])).filter((n) => !isNaN(n));
-      return nums.length ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100 : 0;
-    });
-  } else if (aggregation === "sum") {
-    values = labels.map((k) => {
-      return groups[k].map((r) => Number(r[yColumn])).filter((n) => !isNaN(n)).reduce((a, b) => a + b, 0);
-    });
+  // Sort all keys by count descending for consistent ordering
+  const allKeys = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+
+  for (const key of allKeys) {
+    const groupRows = groups[key];
+    let val;
+    if (aggregation === "count") {
+      val = groupRows.length;
+    } else if (aggregation === "average") {
+      const nums = groupRows.map((r) => Number(r[yColumn])).filter((n) => !isNaN(n));
+      val = nums.length ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100 : 0;
+    } else if (aggregation === "sum") {
+      val = groupRows.map((r) => Number(r[yColumn])).filter((n) => !isNaN(n)).reduce((a, b) => a + b, 0);
+    }
+
+    if (selected.includes(key)) {
+      shownLabels.push(key);
+      shownValues.push(val);
+    } else {
+      // For "Other", sum counts/sums but average doesn't aggregate well — skip "Other" for averages
+      if (aggregation === "average") continue;
+      otherValue += val;
+      hasOther = true;
+    }
   }
 
-  return { labels, values };
+  if (hasOther && otherValue > 0) {
+    shownLabels.push("Other");
+    shownValues.push(otherValue);
+  }
+
+  return { labels: shownLabels, values: shownValues };
 }
 
-// --- Plotly chart rendering ---
+// --- Plotly styling ---
 const PLOTLY_LAYOUT_BASE = {
-  margin: { t: 30, b: 40, l: 50, r: 20 },
+  margin: { t: 8, b: 50, l: 55, r: 16 },
   paper_bgcolor: "transparent",
-  plot_bgcolor: "transparent",
-  font: { family: "Inter, system-ui, sans-serif", size: 12 },
-  height: 300,
+  plot_bgcolor: "#fafbfe",
+  font: { family: "Inter, system-ui, sans-serif", size: 11, color: "#5b6475" },
+  height: 280,
+  xaxis: { gridcolor: "#eef0f6", zerolinecolor: "#e1e5f1" },
+  yaxis: { gridcolor: "#eef0f6", zerolinecolor: "#e1e5f1" },
 };
 
 const PLOTLY_CONFIG = {
@@ -108,73 +143,89 @@ const PLOTLY_CONFIG = {
   responsive: true,
 };
 
-function renderPlotlyChart(container, recipe, rows, isFiltered) {
-  const data = computeChartData(recipe, rows);
+function getBarColors(labels, xColumn) {
+  return labels.map((label, i) => {
+    if (label === "Other") return OTHER_COLOR;
+    if (activeFilters[xColumn] && activeFilters[xColumn] !== label) return "#e0e3ec";
+    return COLORS[i % COLORS.length];
+  });
+}
+
+function renderPlotlyChart(container, recipe, rows, selectedCategories) {
+  const data = computeChartData(recipe, rows, selectedCategories);
   let traces, layout;
 
   if (recipe.type === "bar") {
-    const barColors = data.labels.map((label, i) => {
-      if (activeFilters[recipe.xColumn] && activeFilters[recipe.xColumn] !== label) {
-        return "#d0d5e0";
-      }
-      return COLORS[i % COLORS.length];
-    });
     traces = [{
       type: "bar",
       x: data.labels,
       y: data.values,
-      marker: { color: barColors, line: { width: 0 } },
-      hovertemplate: "%{x}: %{y}<extra></extra>",
+      marker: {
+        color: getBarColors(data.labels, recipe.xColumn),
+        line: { width: 0 },
+      },
+      hovertemplate: "<b>%{x}</b><br>%{y}<extra></extra>",
     }];
+    const yTitle = recipe.aggregation === "count" ? "Count"
+      : recipe.aggregation === "average" ? `Avg ${recipe.yColumn}`
+      : recipe.yColumn;
     layout = {
       ...PLOTLY_LAYOUT_BASE,
-      xaxis: { title: recipe.xColumn },
-      yaxis: { title: recipe.yColumn || (recipe.aggregation === "count" ? "Count" : recipe.yColumn) },
+      xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, tickangle: data.labels.some((l) => l.length > 10) ? -30 : 0 },
+      yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: { text: yTitle, standoff: 10 } },
     };
   } else if (recipe.type === "pie") {
+    const pieColors = data.labels.map((label, i) =>
+      label === "Other" ? OTHER_COLOR : COLORS[i % COLORS.length]
+    );
     traces = [{
       type: "pie",
       labels: data.labels,
       values: data.values,
-      marker: { colors: data.labels.map((_, i) => COLORS[i % COLORS.length]) },
+      marker: { colors: pieColors, line: { color: "#fff", width: 2 } },
       textinfo: "label+percent",
-      hovertemplate: "%{label}: %{value} (%{percent})<extra></extra>",
+      textposition: "inside",
+      insidetextorientation: "horizontal",
+      hovertemplate: "<b>%{label}</b><br>%{value} (%{percent})<extra></extra>",
+      hole: 0.35,
     }];
-    layout = { ...PLOTLY_LAYOUT_BASE };
+    layout = { ...PLOTLY_LAYOUT_BASE, margin: { t: 8, b: 8, l: 8, r: 8 }, showlegend: false };
   } else if (recipe.type === "scatter") {
     traces = [{
       type: "scatter",
       mode: "markers",
       x: data.x,
       y: data.y,
-      marker: { color: COLORS[0], size: 6, opacity: 0.6 },
-      hovertemplate: `${recipe.xColumn}: %{x}<br>${recipe.yColumn}: %{y}<extra></extra>`,
+      marker: { color: COLORS[0], size: 5, opacity: 0.5, line: { width: 0 } },
+      hovertemplate: `<b>${recipe.xColumn}</b>: %{x}<br><b>${recipe.yColumn}</b>: %{y}<extra></extra>`,
     }];
     layout = {
       ...PLOTLY_LAYOUT_BASE,
-      xaxis: { title: recipe.xColumn },
-      yaxis: { title: recipe.yColumn },
+      xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: { text: recipe.xColumn, standoff: 8 } },
+      yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: { text: recipe.yColumn, standoff: 10 } },
     };
   } else if (recipe.type === "histogram") {
     traces = [{
       type: "histogram",
       x: data.values,
       marker: { color: COLORS[0], line: { color: "#fff", width: 1 } },
-      hovertemplate: "%{x}: %{y}<extra></extra>",
+      hovertemplate: "Range: %{x}<br>Count: %{y}<extra></extra>",
     }];
     layout = {
       ...PLOTLY_LAYOUT_BASE,
-      xaxis: { title: recipe.xColumn },
-      yaxis: { title: "Count" },
+      xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: { text: recipe.xColumn, standoff: 8 } },
+      yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: { text: "Count", standoff: 10 } },
+      bargap: 0.05,
     };
   }
 
   Plotly.newPlot(container, traces, layout, PLOTLY_CONFIG);
 
-  // Add cross-filter click handler for bar and pie charts
+  // Cross-filter click handler for bar and pie
   if (recipe.type === "bar" || recipe.type === "pie") {
     container.on("plotly_click", (eventData) => {
       const clickedLabel = eventData.points[0].label || eventData.points[0].x;
+      if (clickedLabel === "Other") return; // Don't filter on "Other"
       const col = recipe.xColumn;
       if (activeFilters[col] === clickedLabel) {
         delete activeFilters[col];
@@ -187,65 +238,71 @@ function renderPlotlyChart(container, recipe, rows, isFiltered) {
   }
 }
 
-// --- Chat chart rendering (for inline Plotly charts from the viz mode) ---
+// --- Chat chart rendering ---
 function renderChatChart(container, spec) {
   let traces, layout;
 
   if (spec.type === "scatter") {
     traces = [{
-      type: "scatter",
-      mode: "markers",
-      x: spec.data.x,
-      y: spec.data.y,
-      marker: { color: COLORS[0], size: 6, opacity: 0.6 },
+      type: "scatter", mode: "markers",
+      x: spec.data.x, y: spec.data.y,
+      marker: { color: COLORS[0], size: 5, opacity: 0.5 },
     }];
     layout = {
       ...PLOTLY_LAYOUT_BASE,
-      xaxis: { title: spec.xLabel || "" },
-      yaxis: { title: spec.yLabel || "" },
+      xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: spec.xLabel || "" },
+      yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: spec.yLabel || "" },
     };
   } else if (spec.type === "histogram") {
     traces = [{
       type: "histogram",
       x: spec.data.values || spec.data.labels,
-      marker: { color: COLORS[0] },
+      marker: { color: COLORS[0], line: { color: "#fff", width: 1 } },
     }];
     layout = {
       ...PLOTLY_LAYOUT_BASE,
-      xaxis: { title: spec.xLabel || "" },
-      yaxis: { title: spec.yLabel || "Count" },
+      xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: spec.xLabel || "" },
+      yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: spec.yLabel || "Count" },
     };
   } else if (spec.type === "pie") {
     traces = [{
       type: "pie",
-      labels: spec.data.labels,
-      values: spec.data.values,
-      marker: { colors: (spec.data.labels || []).map((_, i) => COLORS[i % COLORS.length]) },
+      labels: spec.data.labels, values: spec.data.values,
+      marker: { colors: (spec.data.labels || []).map((_, i) => COLORS[i % COLORS.length]), line: { color: "#fff", width: 2 } },
+      hole: 0.35, textinfo: "label+percent",
     }];
-    layout = { ...PLOTLY_LAYOUT_BASE };
+    layout = { ...PLOTLY_LAYOUT_BASE, margin: { t: 8, b: 8, l: 8, r: 8 }, showlegend: false };
   } else {
-    // bar (default)
     traces = [{
       type: "bar",
-      x: spec.data.labels,
-      y: spec.data.values,
+      x: spec.data.labels, y: spec.data.values,
       marker: { color: COLORS[0] },
     }];
     layout = {
       ...PLOTLY_LAYOUT_BASE,
-      xaxis: { title: spec.xLabel || "" },
-      yaxis: { title: spec.yLabel || "" },
+      xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: spec.xLabel || "" },
+      yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: spec.yLabel || "" },
     };
   }
 
   if (spec.title) {
-    layout.title = { text: spec.title, font: { size: 14 } };
+    layout.title = { text: spec.title, font: { size: 13 } };
   }
 
   Plotly.newPlot(container, traces, layout, PLOTLY_CONFIG);
 }
 
 // --- Dashboard rendering ---
+function renderSingleCard(cardIndex) {
+  const card = elements.dashboardGrid.querySelectorAll(".dashboard-card")[cardIndex];
+  const recipe = dashboardRecipes[cardIndex];
+  if (!card || !recipe) return;
+  const plotDiv = card.querySelector(".plot-div");
+  const rows = getFilteredRows();
+  const selected = cardCategorySelections[cardIndex] || null;
+  renderPlotlyChart(plotDiv, recipe, rows, selected);
+}
+
 function renderAllDashboardCharts() {
   const rows = getFilteredRows();
   const cards = elements.dashboardGrid.querySelectorAll(".dashboard-card");
@@ -254,14 +311,88 @@ function renderAllDashboardCharts() {
     const recipe = dashboardRecipes[i];
     if (!recipe) return;
     const plotDiv = card.querySelector(".plot-div");
-    renderPlotlyChart(plotDiv, recipe, rows, Object.keys(activeFilters).length > 0);
+    const selected = cardCategorySelections[i] || null;
+    renderPlotlyChart(plotDiv, recipe, rows, selected);
   });
+}
+
+function buildCategorySelector(cardIndex, recipe) {
+  // Only for bar and pie charts with categorical grouping
+  if (recipe.type === "scatter" || recipe.type === "histogram") return null;
+
+  const rows = getFilteredRows();
+  const allCats = getAllCategories(recipe.xColumn, rows);
+  if (allCats.length <= DEFAULT_MAX_CATEGORIES) return null; // No need for selector
+
+  // Default: top 4 by count
+  if (!cardCategorySelections[cardIndex]) {
+    cardCategorySelections[cardIndex] = allCats.slice(0, DEFAULT_MAX_CATEGORIES);
+  }
+  const selected = cardCategorySelections[cardIndex];
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "category-selector";
+
+  const pills = document.createElement("div");
+  pills.className = "category-pills";
+
+  for (const cat of allCats) {
+    const pill = document.createElement("button");
+    pill.className = "category-pill" + (selected.includes(cat) ? " active" : "");
+    pill.textContent = cat;
+    pill.addEventListener("click", () => {
+      const sel = cardCategorySelections[cardIndex];
+      if (sel.includes(cat)) {
+        // Don't allow deselecting all
+        if (sel.length <= 1) return;
+        cardCategorySelections[cardIndex] = sel.filter((c) => c !== cat);
+      } else {
+        cardCategorySelections[cardIndex] = [...sel, cat];
+      }
+      // Re-render just this card's selector and chart
+      rebuildCardSelector(cardIndex);
+      renderSingleCard(cardIndex);
+    });
+    pills.appendChild(pill);
+  }
+
+  // "All" toggle
+  const allBtn = document.createElement("button");
+  allBtn.className = "category-pill category-pill-all" + (selected.length === allCats.length ? " active" : "");
+  allBtn.textContent = "All";
+  allBtn.addEventListener("click", () => {
+    if (cardCategorySelections[cardIndex].length === allCats.length) {
+      cardCategorySelections[cardIndex] = allCats.slice(0, DEFAULT_MAX_CATEGORIES);
+    } else {
+      cardCategorySelections[cardIndex] = [...allCats];
+    }
+    rebuildCardSelector(cardIndex);
+    renderSingleCard(cardIndex);
+  });
+  pills.insertBefore(allBtn, pills.firstChild);
+
+  wrapper.appendChild(pills);
+  return wrapper;
+}
+
+function rebuildCardSelector(cardIndex) {
+  const card = elements.dashboardGrid.querySelectorAll(".dashboard-card")[cardIndex];
+  if (!card) return;
+  const existing = card.querySelector(".category-selector");
+  if (existing) existing.remove();
+  const recipe = dashboardRecipes[cardIndex];
+  const selector = buildCategorySelector(cardIndex, recipe);
+  if (selector) {
+    const plotDiv = card.querySelector(".plot-div");
+    card.insertBefore(selector, plotDiv);
+  }
 }
 
 function buildDashboardCards() {
   elements.dashboardGrid.innerHTML = "";
+  cardCategorySelections = {};
 
-  for (const recipe of dashboardRecipes) {
+  dashboardRecipes.forEach((recipe, i) => {
     const card = document.createElement("div");
     card.className = "dashboard-card";
 
@@ -275,11 +406,14 @@ function buildDashboardCards() {
       card.appendChild(desc);
     }
 
+    const selector = buildCategorySelector(i, recipe);
+    if (selector) card.appendChild(selector);
+
     const plotDiv = document.createElement("div");
     plotDiv.className = "plot-div";
     card.appendChild(plotDiv);
     elements.dashboardGrid.appendChild(card);
-  }
+  });
 
   renderAllDashboardCharts();
 }
@@ -302,7 +436,6 @@ function updateFilterBar() {
     elements.filterChips.appendChild(chip);
   }
 
-  // Chip remove handlers
   elements.filterChips.querySelectorAll(".filter-chip-x").forEach((x) => {
     x.addEventListener("click", () => {
       delete activeFilters[x.dataset.col];
@@ -320,7 +453,6 @@ elements.clearFilters.addEventListener("click", () => {
 
 // --- Load data and dashboard ---
 async function initDashboard() {
-  // Fetch raw data for client-side filtering
   try {
     const dataRes = await fetch("/api/data");
     const dataJson = await dataRes.json();
@@ -329,7 +461,6 @@ async function initDashboard() {
     console.error("Failed to fetch data:", err);
   }
 
-  // Poll for dashboard recipes
   const poll = async () => {
     try {
       const res = await fetch("/api/dashboard");
