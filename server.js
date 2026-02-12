@@ -79,8 +79,13 @@ const evalExpr = (expr) => {
   return fn(csvRows);
 };
 
+// --- Data endpoint (for client-side filtering) ---
+app.get("/api/data", (req, res) => {
+  res.json({ rows: csvRows, columns: csvColumns });
+});
+
 // --- Dashboard generation at startup ---
-let dashboardCharts = [];
+let dashboardRecipes = [];
 let dashboardReady = false;
 
 async function generateDashboard() {
@@ -88,41 +93,38 @@ async function generateDashboard() {
   try {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5-20250929",
-      max_tokens: 8192,
-      system: `You are a data visualization expert. You will be given a dataset summary. Your job is to return exactly 6 chart specifications as a JSON array that reveal the most interesting patterns in the data.
+      max_tokens: 4096,
+      system: `You are a data visualization expert. You will be given a dataset summary. Your job is to return exactly 6 chart recipe specifications as a JSON array.
 
-Each chart spec must follow this exact format:
+Each recipe tells the frontend which columns to use and how to aggregate them. The frontend will compute the actual data and handle filtering.
+
+Each recipe must follow this exact format:
 {
   "title": "Chart Title",
-  "description": "One sentence explaining the key insight this chart reveals.",
-  "type": "bar|line|pie|doughnut|scatter|radar",
-  "data": {
-    "labels": "<js expression returning string array, using rows>",
-    "datasets": [
-      {
-        "label": "Series Name",
-        "data": "<js expression returning number array, using rows>",
-        "backgroundColor": ["#3b6ef0","#f06e3b","#3bf06e","#f0c93b","#b03bf0","#3bf0e0","#f03b6e","#6ef03b","#f0a03b","#3b9ef0","#e03bf0","#3bf09e"]
-      }
-    ]
-  },
-  "options": {
-    "xLabel": "X Axis Label",
-    "yLabel": "Y Axis Label"
-  }
+  "description": "One sentence explaining the key insight.",
+  "type": "bar|pie|scatter|histogram",
+  "xColumn": "column_name",
+  "yColumn": "column_name_or_null",
+  "aggregation": "count|average|sum|none"
 }
 
-The "labels" and "data" fields are JavaScript expressions that will be evaluated with \`rows\` (an array of row objects from the CSV). Use only basic JS: map, filter, reduce, sort, Set, Math, Object, Number.
+Rules:
+- type "bar" + aggregation "count": counts rows per unique value of xColumn
+- type "bar" + aggregation "average": averages yColumn per unique value of xColumn
+- type "bar" + aggregation "sum": sums yColumn per unique value of xColumn
+- type "pie" + aggregation "count": proportions of xColumn values
+- type "scatter" + aggregation "none": plots xColumn vs yColumn as points (both must be numeric)
+- type "histogram" + aggregation "count": bins numeric xColumn values into ranges
 
 Pick 6 charts that cover:
-1. Distribution of a key categorical variable (pie or doughnut)
-2. Comparison of a numeric metric across categories (bar)
-3. Relationship between two numeric variables (scatter — use {x, y} objects in data, no labels needed)
-4. Distribution/histogram of a numeric variable (bar with binned ranges)
+1. Distribution of a key categorical variable (pie)
+2. Comparison of a numeric metric across categories (bar + average)
+3. Relationship between two numeric variables (scatter)
+4. Distribution of a numeric variable (histogram)
 5. A surprising or noteworthy pattern you notice
 6. One more of your choice
 
-Return ONLY a JSON array of 6 objects — no markdown fences, no explanation, just the raw JSON array.`,
+Use ONLY column names that exist in the dataset. Return ONLY a JSON array — no markdown fences, no explanation.`,
       messages: [{ role: "user", content: `Here is the dataset:\n\n${csvSummary}` }],
     });
 
@@ -132,47 +134,24 @@ Return ONLY a JSON array of 6 objects — no markdown fences, no explanation, ju
       .join("\n")
       .trim();
 
-    // Strip markdown fences if Claude adds them anyway
     let jsonText = rawText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?\s*```$/, "").trim();
-    // Sanitize smart quotes
     jsonText = jsonText.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"');
     jsonText = jsonText.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
 
-    const charts = JSON.parse(jsonText);
-
-    for (const chart of charts) {
-      try {
-        if (typeof chart.data.labels === "string") {
-          chart.data.labels = evalExpr(chart.data.labels);
-        }
-        for (const ds of chart.data.datasets) {
-          if (typeof ds.data === "string") {
-            ds.data = evalExpr(ds.data);
-          }
-          if (typeof ds.backgroundColor === "string" && ds.backgroundColor.includes("rows")) {
-            ds.backgroundColor = evalExpr(ds.backgroundColor);
-          }
-        }
-        dashboardCharts.push(chart);
-      } catch (chartErr) {
-        console.error(`Dashboard chart "${chart.title}" eval error:`, chartErr.message);
-      }
-    }
-
+    dashboardRecipes = JSON.parse(jsonText);
     dashboardReady = true;
-    console.log(`Dashboard ready (${dashboardCharts.length} charts)`);
+    console.log(`Dashboard ready (${dashboardRecipes.length} recipes)`);
   } catch (err) {
     console.error("Dashboard generation error:", err.message);
-    dashboardReady = true; // Mark ready even on failure so UI stops loading
+    dashboardReady = true;
   }
 }
 
-// Start dashboard generation in background
 generateDashboard();
 
 // --- Dashboard endpoint ---
 app.get("/api/dashboard", (req, res) => {
-  res.json({ charts: dashboardCharts, ready: dashboardReady });
+  res.json({ recipes: dashboardRecipes, ready: dashboardReady });
 });
 
 // --- Chat endpoint ---
@@ -182,54 +161,55 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Missing question" });
   }
 
-const vizPrompt = vizMode ? `
+  const vizPrompt = vizMode ? `
 
 **Visualization mode is ON.**
 
-In addition to your text explanation, also return a chart specification as a JSON code block. The chart will be rendered with Chart.js on the frontend.
+In addition to your text explanation, also return a chart specification as a JSON code block. The chart will be rendered with Plotly.js on the frontend.
 
 Return the chart spec in this format:
 
 \`\`\`json
 {"chart": {
-  "type": "<bar|line|pie|doughnut|scatter|radar>",
+  "type": "bar|pie|scatter|histogram",
   "title": "Chart Title",
   "data": {
     "labels": "<js expression returning string array, evaluated against rows>",
-    "datasets": [
-      {
-        "label": "Series Name",
-        "data": "<js expression returning number array, evaluated against rows>",
-        "backgroundColor": ["#3b6ef0","#f06e3b","#3bf06e","#f0c93b","#b03bf0","#3bf0e0","#f03b6e","#6ef03b"]
-      }
-    ]
+    "values": "<js expression returning number array, evaluated against rows>"
   },
-  "options": {
-    "xLabel": "X Axis Label",
-    "yLabel": "Y Axis Label"
-  }
+  "xLabel": "X Axis Label",
+  "yLabel": "Y Axis Label"
+}}
+\`\`\`
+
+For scatter charts, use "x" and "y" instead of "labels" and "values":
+\`\`\`json
+{"chart": {
+  "type": "scatter",
+  "title": "Chart Title",
+  "data": {
+    "x": "<js expression returning number array>",
+    "y": "<js expression returning number array>"
+  },
+  "xLabel": "X Axis",
+  "yLabel": "Y Axis"
 }}
 \`\`\`
 
 Guidelines for chart selection:
 - Comparing categories (e.g. by gender, by industry): use "bar"
-- Showing proportions/distribution of a single categorical variable: use "pie" or "doughnut"
-- Trends over a numeric range or ordered variable: use "line"
-- Relationship between two numeric variables: use "scatter" (use {x, y} objects in data instead of labels)
-- Distribution of a numeric variable (histogram): use "bar" with binned data
-- Comparing multiple measures across categories: use "bar" with multiple datasets
-- Stacked comparison: use "bar" with multiple datasets and add "stacked": true to options
+- Showing proportions of a categorical variable: use "pie"
+- Relationship between two numeric variables: use "scatter"
+- Distribution of a numeric variable: use "histogram"
 
-The JavaScript expressions in "labels" and "data" fields will be evaluated with \`rows\` (the full dataset array). Write expressions that return arrays. Example:
+The JavaScript expressions in data fields will be evaluated with \`rows\` (the full dataset array). Write expressions that return arrays. Example:
 - labels: \`[...new Set(rows.map(r => r.industry))]\`
-- data: \`[...new Set(rows.map(r => r.industry))].map(ind => rows.filter(r => r.industry === ind).length)\`
+- values: \`[...new Set(rows.map(r => r.industry))].map(ind => rows.filter(r => r.industry === ind).length)\`
 
-Always provide a text explanation BEFORE the chart spec. The chart supplements your answer; the text should stand on its own. Do NOT use a compute block when you are also providing a chart block — put all data computation into the chart spec expressions instead.
-
-Provide sensible default colors. Use at least as many colors as there are data points for pie/doughnut charts.
+Always provide a text explanation BEFORE the chart spec. Do NOT use a compute block when providing a chart block.
 ` : "";
 
-const systemPrompt = `You are a senior data expert who's spent months with this survey dataset. You know it inside and out. Talk about it the way you'd talk to a colleague over coffee — naturally, conversationally, like someone who genuinely finds this stuff interesting.
+  const systemPrompt = `You are a senior data expert who's spent months with this survey dataset. You know it inside and out. Talk about it the way you'd talk to a colleague over coffee — naturally, conversationally, like someone who genuinely finds this stuff interesting.
 
 **How you communicate:**
 
@@ -276,15 +256,12 @@ ${vizPrompt}
         const jsonBlock = reply.match(/```json\s*\n?([\s\S]*?)\n?```/)[1];
         const parsed = JSON.parse(jsonBlock);
         const expression = parsed.compute;
-        // Execute the expression against the full dataset
         const fn = new Function("rows", `"use strict"; return (${expression});`);
         const result = fn(csvRows);
-        // Replace the code block with the computed result in the reply
         const beforeBlock = reply.substring(0, reply.indexOf("```json")).trim();
         reply = beforeBlock ? `${beforeBlock}\n\n${result}` : String(result);
       } catch (evalErr) {
         console.error("Compute error:", evalErr.message);
-        // Fall back to the raw reply from Claude
       }
     }
 
@@ -293,7 +270,6 @@ ${vizPrompt}
     const allJsonBlocks = [...reply.matchAll(/```json\s*\n([\s\S]*?)\n\s*```/g)];
     for (const block of allJsonBlocks) {
       let jsonText = block[1].trim();
-      // Sanitize smart quotes that Claude sometimes uses
       jsonText = jsonText.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"');
       jsonText = jsonText.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
 
@@ -303,24 +279,14 @@ ${vizPrompt}
 
         const chartSpec = parsed.chart;
 
-        // Evaluate JS expressions in labels
-        if (typeof chartSpec.data.labels === "string") {
-          chartSpec.data.labels = evalExpr(chartSpec.data.labels);
-        }
-
-        // Evaluate JS expressions in each dataset
-        for (const ds of chartSpec.data.datasets) {
-          if (typeof ds.data === "string") {
-            ds.data = evalExpr(ds.data);
-          }
-          if (typeof ds.backgroundColor === "string" && ds.backgroundColor.includes("rows")) {
-            ds.backgroundColor = evalExpr(ds.backgroundColor);
+        // Evaluate JS expressions in data fields
+        for (const key of ["labels", "values", "x", "y"]) {
+          if (typeof chartSpec.data[key] === "string") {
+            chartSpec.data[key] = evalExpr(chartSpec.data[key]);
           }
         }
 
         chartData = chartSpec;
-
-        // Remove the chart JSON block from the text reply
         reply = reply.replace(block[0], "").trim();
         break;
       } catch (chartErr) {

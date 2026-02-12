@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Job Displacement Survey — Data Chat</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.0.min.js" charset="utf-8"></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -28,6 +28,11 @@
       </nav>
 
       <section class="panel" id="dashboardPanel">
+        <div class="filter-bar hidden" id="filterBar">
+          <span class="filter-bar-label">Filters:</span>
+          <div class="filter-chips" id="filterChips"></div>
+          <button class="clear-filters" id="clearFilters">Clear all</button>
+        </div>
         <div class="dashboard-loading" id="dashboardLoading">
           <div class="spinner"></div>
           <p>Claude is analyzing the dataset and generating insights...</p>
